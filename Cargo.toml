@@ -6,10 +6,21 @@ license = "MIT"
 description = "Oriented bounding box solvers extracted from IGE: min-area rotating calipers, aspect-constrained expand, and exact aspect-fit (AFR) optimal rotation"
 repository = "https://github.com/GIS-Inscribed-Geometry/IGE"
 
+[lib]
+name = "oriented_bounding_box"
+path = "src/lib.rs"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
 [dependencies]
 geo = "0.33.1"
 geo-types = "0.7.19"
 thiserror = "2"
+libc = "0.2"
+pyo3 = { version = "0.29", optional = true }
+geo-traits = { version = "0.3", optional = true }
 
 [features]
 default = []
+python = ["dep:pyo3"]
+extension-module = ["pyo3/extension-module"]
+geo-traits = ["dep:geo-traits"]
