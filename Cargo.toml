@@ -1,0 +1,15 @@
+[package]
+name = "ige-obb"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Oriented bounding box solvers extracted from IGE: min-area rotating calipers, aspect-constrained expand, and exact aspect-fit (AFR) optimal rotation"
+repository = "https://github.com/GIS-Inscribed-Geometry/IGE"
+
+[dependencies]
+geo = "0.33.1"
+geo-types = "0.7.19"
+thiserror = "2"
+
+[features]
+default = []
