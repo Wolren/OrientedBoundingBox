@@ -1,3 +1,8 @@
+//! Exact optimal rotation for a fixed-aspect-ratio frame.
+//!
+//! Rotating-calipers support function with a closed-form aspect-ratio
+//! crossing root per caliper interval: O(n log n), no grid search.
+
 use super::super::ObbResult;
 use super::common::{
     antipodal_coeffs, caliper_breakpoints, fill_ratio, hull_ccw, width_depth, EPS,

@@ -1,3 +1,5 @@
+//! Minimal-area OBB by rotating calipers over convex-hull edge directions.
+
 use super::super::{ObbOptions, ObbResult};
 use super::common::{hull_ccw, width_depth};
 use crate::shared::{rotate_polygon_around, LirError, Result};

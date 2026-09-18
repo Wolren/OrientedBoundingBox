@@ -13,7 +13,9 @@ use std::slice;
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct HoleInput {
+    /// Pointer to the hole ring's flat x/y coordinate doubles.
     pub coords: *const c_double,
+    /// Number of doubles in `coords`; must be even and at least 6.
     pub coords_len: size_t,
 }
 
@@ -21,11 +23,17 @@ pub struct HoleInput {
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct ObbOptionsC {
+    /// Max aspect ratio, longer side over shorter; 0.0 means unconstrained.
     pub max_aspect_ratio: c_double,
+    /// Min aspect ratio, longer side over shorter; 0.0 means unconstrained.
     pub min_aspect_ratio: c_double,
+    /// Number of angle samples for the search; 0 selects the Rust default.
     pub angle_samples: size_t,
+    /// Nonzero enables the PCA initial angle guess.
     pub use_pca: c_int,
+    /// Nonzero enables refinement after the initial angle search.
     pub use_refinement: c_int,
+    /// Refinement tolerance in degrees; 0.0 or less selects the Rust default.
     pub xatol_deg: c_double,
 }
 
@@ -46,18 +54,34 @@ impl Default for ObbOptionsC {
 /// OBB result: ring + full metrics.
 #[repr(C)]
 pub struct ObbResultC {
+    /// Box corners as flat x/y doubles: four points, then the first repeated.
+    /// Zero-filled on the aspect-fit path, where no polygon is produced.
     pub ring: [c_double; 10],
+    /// Box area in squared units of the input coordinates.
     pub area: c_double,
+    /// Box perimeter in input coordinate units.
     pub perimeter: c_double,
+    /// Box rotation angle in degrees.
     pub angle_deg: c_double,
+    /// Box width along its rotated axis.
     pub width: c_double,
+    /// Box height along its rotated axis.
     pub height: c_double,
+    /// Aspect ratio, longer side over shorter, always at least 1.
     pub aspect_ratio: c_double,
+    /// Fill ratio. Polygon area divided by box area on the min-area and
+    /// axis-aligned paths; on the aspect-fit path, the rotated bounding
+    /// rectangle area divided by frame area.
     pub fill_ratio: c_double,
+    /// Box centroid x, or 0.0 when no centroid was computed.
     pub centroid_x: c_double,
+    /// Box centroid y, or 0.0 when no centroid was computed.
     pub centroid_y: c_double,
+    /// On the aspect-fit path, `fill_ratio` at angle 0; 0.0 on other paths.
     pub north_fill: c_double,
+    /// Percent improvement over north-up; aspect fit only, 0.0 otherwise.
     pub improve_pct: c_double,
+    /// Number of caliper intervals; aspect fit only, 0 otherwise.
     pub n_intervals: size_t,
 }
 
@@ -279,6 +303,7 @@ pub unsafe extern "C" fn obb_solve_aspect_fit(
     })
 }
 
+/// Return OBB options holding the crate's default values.
 #[no_mangle]
 pub extern "C" fn obb_options_default() -> ObbOptionsC {
     ObbOptionsC::default()

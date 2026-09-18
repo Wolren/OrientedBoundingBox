@@ -63,17 +63,21 @@ pub struct ObbResult {
     pub centroid: Option<Point<f64>>,
     /// Aspect ratio (longer/shorter, always ≥ 1).
     pub aspect_ratio: f64,
-    /// Fill ratio (polygon area / OBB area).
+    /// Fill ratio. On the min-area and axis-aligned paths this is polygon area
+    /// divided by box area. On the aspect-fit path it is the area of the
+    /// rotated bounding rectangle divided by frame area, at most 1.0 and equal
+    /// to 1.0 when a rotation matches the target ratio exactly.
     pub fill_ratio: f64,
-    /// Fill ratio at 0° (aspect-fit only).
+    /// On the aspect-fit path, `fill_ratio` at angle 0; 0.0 on the other paths.
     pub north_fill: f64,
-    /// Improvement % over north-up (aspect-fit only).
+    /// Percent improvement of `fill_ratio` over `north_fill`; aspect fit only.
     pub improve_pct: f64,
     /// Number of caliper intervals (aspect-fit only).
     pub n_intervals: usize,
 }
 
 impl ObbResult {
+    /// Build a result with no polygon, zeroed metrics, and zero counters.
     pub fn empty() -> Self {
         Self {
             polygon: None,

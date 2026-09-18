@@ -72,15 +72,14 @@ pub fn solve_obb_geometry(geom: &Geometry<f64>, options: &ObbOptions) -> Result<
     match geom {
         Geometry::Polygon(p) => solve_obb(p, options),
         Geometry::MultiPolygon(mp) => {
-            let best = mp
-                .0
-                .iter()
-                .max_by(|a, b| {
-                    a.unsigned_area()
-                        .partial_cmp(&b.unsigned_area())
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                })
-                .ok_or_else(|| LirError::InvalidPolygon("empty MultiPolygon".into()))?;
+            let best =
+                mp.0.iter()
+                    .max_by(|a, b| {
+                        a.unsigned_area()
+                            .partial_cmp(&b.unsigned_area())
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
+                    .ok_or_else(|| LirError::InvalidPolygon("empty MultiPolygon".into()))?;
             solve_obb(best, options)
         }
         other => Err(LirError::NotSupported(format!(
@@ -99,15 +98,14 @@ pub fn solve_obb_constrained_geometry(
     match geom {
         Geometry::Polygon(p) => solve_obb_constrained(p, options),
         Geometry::MultiPolygon(mp) => {
-            let best = mp
-                .0
-                .iter()
-                .max_by(|a, b| {
-                    a.unsigned_area()
-                        .partial_cmp(&b.unsigned_area())
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                })
-                .ok_or_else(|| LirError::InvalidPolygon("empty MultiPolygon".into()))?;
+            let best =
+                mp.0.iter()
+                    .max_by(|a, b| {
+                        a.unsigned_area()
+                            .partial_cmp(&b.unsigned_area())
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
+                    .ok_or_else(|| LirError::InvalidPolygon("empty MultiPolygon".into()))?;
             solve_obb_constrained(best, options)
         }
         other => Err(LirError::NotSupported(format!(

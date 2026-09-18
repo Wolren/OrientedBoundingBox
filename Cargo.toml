@@ -2,9 +2,18 @@
 name = "oriented-bounding-box"
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
-description = "Oriented bounding box solvers extracted from IGE: min-area rotating calipers, aspect-constrained expand, and exact aspect-fit (AFR) optimal rotation"
+rust-version = "1.88"
+license = "Apache-2.0"
+description = "Oriented bounding box solvers: minimum-area rotating calipers, aspect-ratio constrained expansion, and exact aspect-fit rotation"
 repository = "https://github.com/Wolren/oriented-bounding-box"
+documentation = "https://docs.rs/oriented-bounding-box"
+readme = "README.md"
+keywords = ["gis", "geospatial", "geometry", "bounding-box", "rotating-calipers"]
+categories = ["science::geo", "algorithms", "mathematics"]
+
+[package.metadata.docs.rs]
+features = ["geo-traits"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
 name = "oriented_bounding_box"
