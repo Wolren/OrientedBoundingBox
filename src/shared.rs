@@ -7,22 +7,30 @@ use geo::Centroid;
 use geo_types::{Coord, LineString, Point, Polygon};
 use thiserror::Error;
 
+/// Errors returned by the solvers and their interop layers.
 #[derive(Debug, Error)]
 pub enum LirError {
+    /// The polygon is degenerate or holds a non-finite coordinate.
     #[error("Invalid polygon: {0}")]
     InvalidPolygon(String),
+    /// No rectangle satisfying the requested constraints exists.
     #[error("No rectangle found")]
     NoRectangleFound,
+    /// A GPU backend reported an error.
     #[error("GPU error: {0}")]
     GpuError(String),
+    /// The input geometry kind is not handled by the requested solver.
     #[error("Algorithm not supported: {0}")]
     NotSupported(String),
+    /// An internal solver invariant was violated.
     #[error("Internal error: {0}")]
     Internal(String),
 }
 
+/// Solver result alias over [`LirError`].
 pub type Result<T> = std::result::Result<T, LirError>;
 
+/// Rotate a polygon about its own centroid by `angle_deg` degrees.
 pub fn rotate_polygon(poly: &Polygon<f64>, angle_deg: f64) -> Polygon<f64> {
     if angle_deg.abs() < 1e-9 {
         return poly.clone();
@@ -33,6 +41,7 @@ pub fn rotate_polygon(poly: &Polygon<f64>, angle_deg: f64) -> Polygon<f64> {
     }
 }
 
+/// Rotate a polygon about `center` by `angle_deg` degrees.
 pub fn rotate_polygon_around(
     poly: &Polygon<f64>,
     angle_deg: f64,

@@ -1,9 +1,15 @@
+//! Axis-aligned bounding box solver.
+//!
+//! The box edges stay parallel to the coordinate axes, so the reported
+//! rotation angle is always 0.
+
 use super::{ObbOptions, ObbResult};
 use crate::shared::Result;
 use geo::{Area, BoundingRect, Centroid};
 use geo_types::Polygon;
 
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
+/// Compute the axis-aligned bounding rectangle of a polygon; options are ignored.
 pub fn solve_obb_axis_aligned(poly: &Polygon<f64>, _options: &ObbOptions) -> Result<ObbResult> {
     let area = poly.unsigned_area();
     let bb = poly

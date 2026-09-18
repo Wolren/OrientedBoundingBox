@@ -1,7 +1,10 @@
+//! Shared geometry helpers for the oriented solvers.
+
 use geo::ConvexHull;
 use geo_types::Coord;
 use geo_types::Polygon;
 
+/// Tolerance below which a quantity counts as zero.
 pub const EPS: f64 = 1e-12;
 
 /// Extract convex hull vertices in CCW order.

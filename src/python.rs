@@ -78,31 +78,47 @@ pub fn guard<T>(f: impl FnOnce() -> PyResult<T> + std::panic::UnwindSafe) -> PyR
 
 #[pyclass]
 #[derive(Clone)]
+/// Result of an OBB solve, exposed to Python as read-only attributes.
 pub struct PyObbResult {
+    /// Area of the bounding box in squared input units.
     #[pyo3(get)]
     pub area: f64,
+    /// Perimeter of the bounding box.
     #[pyo3(get)]
     pub perimeter: f64,
+    /// Rotation angle of the box in degrees.
     #[pyo3(get)]
     pub angle_deg: f64,
+    /// Width of the box along its rotated axis.
     #[pyo3(get)]
     pub width: f64,
+    /// Height of the box along its rotated axis.
     #[pyo3(get)]
     pub height: f64,
+    /// Aspect ratio, longer side over shorter, always at least 1.
     #[pyo3(get)]
     pub aspect_ratio: f64,
+    /// Fill ratio. Polygon area divided by box area on the min-area and
+    /// axis-aligned paths; on the aspect-fit path, the rotated bounding
+    /// rectangle area divided by frame area.
     #[pyo3(get)]
     pub fill_ratio: f64,
+    /// Box centroid x coordinate.
     #[pyo3(get)]
     pub centroid_x: f64,
+    /// Box centroid y coordinate.
     #[pyo3(get)]
     pub centroid_y: f64,
+    /// Box polygon in WKT; empty when no polygon was produced.
     #[pyo3(get)]
     pub polygon_wkt: String,
+    /// On the aspect-fit path, `fill_ratio` at angle 0; 0.0 on other paths.
     #[pyo3(get)]
     pub north_fill: f64,
+    /// Percent improvement over north-up; aspect fit only, 0.0 otherwise.
     #[pyo3(get)]
     pub improve_pct: f64,
+    /// Number of caliper intervals; aspect fit only, 0 otherwise.
     #[pyo3(get)]
     pub n_intervals: usize,
 }
@@ -159,6 +175,7 @@ fn obb_opts(
     o
 }
 
+/// Solve the minimal-area OBB for an exterior ring and optional holes.
 #[pyfunction(signature = (exterior, holes=None, max_aspect_ratio=None, min_aspect_ratio=None, angle_samples=None, use_pca=None, use_refinement=None, xatol_deg=None))]
 #[allow(clippy::too_many_arguments)]
 pub fn solve_obb_py(
@@ -186,6 +203,7 @@ pub fn solve_obb_py(
     })
 }
 
+/// Solve the minimal-area OBB with aspect-ratio clamps applied.
 #[pyfunction(signature = (exterior, holes=None, max_aspect_ratio=None, min_aspect_ratio=None))]
 pub fn solve_obb_constrained_py(
     exterior: Vec<(f64, f64)>,
@@ -207,6 +225,7 @@ pub fn solve_obb_constrained_py(
     })
 }
 
+/// Find the best rotation of a fixed-ratio frame around the exterior ring.
 #[pyfunction(signature = (exterior, ratio_w, ratio_h, holes=None))]
 pub fn solve_obb_aspect_fit_py(
     exterior: Vec<(f64, f64)>,
@@ -222,6 +241,7 @@ pub fn solve_obb_aspect_fit_py(
     })
 }
 
+/// Register the result class and the three solver functions on `m`.
 pub fn register(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let _ = py;
     m.add_class::<PyObbResult>()?;
