@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Oriented bounding box solvers extracted from IGE: min-area rotating calipers, aspect-constrained expand, and exact aspect-fit (AFR) optimal rotation"
-repository = "https://github.com/GIS-Inscribed-Geometry/IGE"
+repository = "https://github.com/Wolren/oriented-bounding-box"
 
 [lib]
 name = "oriented_bounding_box"
