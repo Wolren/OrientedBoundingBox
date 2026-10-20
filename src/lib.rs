@@ -77,13 +77,14 @@ pub mod geo_interop;
 pub use geo_types;
 
 pub use obb::axis_aligned::solve_obb_axis_aligned;
+#[cfg(feature = "rayon")]
+pub use obb::solve_obb_slice;
 pub use obb::{
     build_obb_frame, solve_obb, solve_obb_aspect_fit, solve_obb_constrained, ObbOptions, ObbResult,
 };
-pub use shared::{LirError, Result};
-
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
+pub use shared::{LirError, Result};
 
 /// Python extension module (feature `python`).
 ///

@@ -122,6 +122,21 @@ pub struct ObbFrame {
     pub center: Point<f64>,
 }
 
+/// Solve many polygons in parallel using rayon.
+///
+/// Each polygon is independent, so results come back in input order and are
+/// bit-identical to calling [`solve_obb`] on each one. Use this when the caller
+/// has a batch; it does not change any single solve.
+#[cfg(feature = "rayon")]
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
+pub fn solve_obb_slice(polys: &[Polygon<f64>], options: &ObbOptions) -> Vec<Result<ObbResult>> {
+    use rayon::prelude::*;
+    polys
+        .par_iter()
+        .map(|poly| solve_obb(poly, options))
+        .collect()
+}
+
 /// Minimal-area oriented bounding box via rotating calipers.
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn solve_obb(poly: &Polygon<f64>, options: &ObbOptions) -> Result<ObbResult> {
