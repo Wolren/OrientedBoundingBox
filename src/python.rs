@@ -76,7 +76,7 @@ pub fn guard<T>(f: impl FnOnce() -> PyResult<T> + std::panic::UnwindSafe) -> PyR
     }
 }
 
-#[pyclass]
+#[pyclass(skip_from_py_object)]
 #[derive(Clone)]
 /// Result of an OBB solve, exposed to Python as read-only attributes.
 pub struct PyObbResult {

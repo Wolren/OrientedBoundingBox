@@ -10,6 +10,7 @@ documentation = "https://docs.rs/oriented-bounding-box"
 readme = "README.md"
 keywords = ["gis", "geospatial", "geometry", "bounding-box", "rotating-calipers"]
 categories = ["science::geo", "algorithms", "mathematics"]
+exclude = [".github"]
 
 [package.metadata.docs.rs]
 features = ["geo-traits"]
@@ -27,9 +28,11 @@ thiserror = "2"
 libc = "0.2"
 pyo3 = { version = "0.29", optional = true }
 geo-traits = { version = "0.3", optional = true }
+hotpath = { version = "0.27", optional = true }
 
 [features]
 default = []
 python = ["dep:pyo3"]
 extension-module = ["pyo3/extension-module"]
 geo-traits = ["dep:geo-traits"]
+hotpath = ["dep:hotpath"]

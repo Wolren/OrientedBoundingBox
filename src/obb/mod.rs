@@ -102,6 +102,26 @@ impl Default for ObbResult {
     }
 }
 
+/// One frame at a known angle: the box polygon plus the measurements behind it.
+///
+/// `body_*` describe the tight bounding box of the rotated polygon, and
+/// `frame_*` describe that box expanded to the requested aspect ratio.
+#[derive(Debug, Clone)]
+pub struct ObbFrame {
+    /// The frame polygon, rotated back into input coordinates.
+    pub polygon: Polygon<f64>,
+    /// Frame width after expansion to the target ratio.
+    pub frame_w: f64,
+    /// Frame height after expansion to the target ratio.
+    pub frame_h: f64,
+    /// Tight bounding-box width of the rotated polygon.
+    pub body_w: f64,
+    /// Tight bounding-box height of the rotated polygon.
+    pub body_h: f64,
+    /// Centre of the frame in input coordinates.
+    pub center: Point<f64>,
+}
+
 /// Minimal-area oriented bounding box via rotating calipers.
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn solve_obb(poly: &Polygon<f64>, options: &ObbOptions) -> Result<ObbResult> {
@@ -213,7 +233,7 @@ pub fn build_obb_frame(
     theta_rad: f64,
     ratio_w: f64,
     ratio_h: f64,
-) -> Option<(Polygon<f64>, f64, f64, f64, f64, f64, f64)> {
+) -> Option<ObbFrame> {
     oriented::aspect_fit::build_obb_frame(poly, theta_rad, ratio_w, ratio_h)
 }
 
@@ -280,8 +300,10 @@ mod tests {
             ]),
             vec![],
         );
-        let mut opts = ObbOptions::default();
-        opts.max_ratio = 2.0;
+        let opts = ObbOptions {
+            max_ratio: 2.0,
+            ..Default::default()
+        };
         let r = solve_obb_constrained(&poly, &opts).unwrap();
         assert!(r.aspect_ratio <= 2.0 + 1e-6, "ar={}", r.aspect_ratio);
     }

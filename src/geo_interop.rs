@@ -15,7 +15,7 @@ use super::obb::{solve_obb, solve_obb_aspect_fit, solve_obb_constrained, ObbOpti
 use super::shared::{LirError, Result};
 use geo::Area;
 use geo_traits::to_geo::ToGeoPolygon;
-use geo_traits::{GeometryTrait, PolygonTrait};
+use geo_traits::PolygonTrait;
 use geo_types::{Geometry, Polygon};
 
 /// Solve min-area OBB on any foreign polygon implementing `PolygonTrait`.
