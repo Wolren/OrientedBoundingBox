@@ -66,6 +66,44 @@ edge-aligned, and a concave polygon has the same minimal box as its hull. The
 brute-force sweep is there to catch a regression in the caliper bookkeeping,
 not to approximate the answer.
 
+## Performance
+
+### Against GEOS, same polygon
+
+290 Polish cadastral parcels (BDOT10k, TERYT 2261) vendored in
+`benches/data/realworld_290.geojson`. Both sides get the same polygon and only
+the solve is timed: the GEOS geometry is built before the clock starts, and
+neither side includes coordinate conversion. GEOS runs
+`MinimumRotatedRectangle`, its equivalent of the minimum-area box. Best of 5
+per case.
+
+Ratio is GEOS / native, so above 1 means we win.
+
+| Measure | native | GEOS | Ratio |
+|---------|-------:|-----:|------:|
+| total, 290 parcels | **0.5 ms** | 2.2 ms | **4.23x** |
+| per-case median | | | 4.25x |
+| per-case p10 | | | 3.35x |
+| per-case p90 | | | 5.67x |
+| native faster on | 290/290 | | 100% |
+
+The advantage is stable across size, unlike a convergent search:
+
+| Exterior vertices | n | native | GEOS | Ratio |
+|------------------:|--:|-------:|-----:|------:|
+| 0-7 | 42 | 0.03 ms | 0.11 ms | 4.17x |
+| 8-16 | 111 | 0.12 ms | 0.49 ms | 3.99x |
+| 17-32 | 75 | 0.12 ms | 0.60 ms | 4.83x |
+| 33-64 | 28 | 0.07 ms | 0.33 ms | 4.87x |
+| 65-128 | 20 | 0.07 ms | 0.24 ms | 3.55x |
+| 129+ | 14 | 0.12 ms | 0.44 ms | 3.85x |
+
+Box areas agree: median 2.1e-8, p90 6.5e-7, max 3.1e-5 relative. The min-area
+box is unique, so a larger disagreement would mean one side is wrong.
+
+Regenerate with `cargo run --release --features bench-geos --example compare_apples`,
+which needs `GEOS_LIB_DIR`, `GEOS_VERSION` and GEOS on `PATH`.
+
 ## Features
 
 | Feature | Effect |
