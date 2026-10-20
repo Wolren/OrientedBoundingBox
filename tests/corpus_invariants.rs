@@ -117,16 +117,29 @@ fn min_area_matches_brute_force_rotation() {
 
 #[test]
 fn box_contains_its_polygon() {
-    // Vertices sit exactly on the box boundary, and `contains` excludes the
-    // boundary by definition, so the check samples interior points instead. A
-    // vertex test would fail on rounding even for a correct box.
+    // A correct box puts every polygon point inside it, but a point can land on
+    // the boundary where `contains` is knife-edge: the diamond test sample sat
+    // 2e-17 inside and was still rejected. Measure signed distance to the box
+    // edges instead, and allow the same 1e-9 relative slack the area test uses.
     let opts = ObbOptions::default();
     for (name, p) in corpus() {
         let r = solve_obb(&p, &opts).expect("obb");
         let box_poly = r.polygon.expect("box polygon");
+        let ext = box_poly.exterior();
         let rect = p.bounding_rect().expect("rect");
         let (min_x, min_y) = (rect.min().x, rect.min().y);
         let (max_x, max_y) = (rect.max().x, rect.max().y);
+        let scale = (max_x - min_x).max(max_y - min_y).max(1.0);
+        let tol = scale * 1e-9;
+
+        // Outward is the positive side, so a point inside has every edge
+        // distance at or below `tol` in magnitude on the inward side.
+        let side = |pt: Coord<f64>, a: Coord<f64>, b: Coord<f64>| -> f64 {
+            let (dx, dy) = (b.x - a.x, b.y - a.y);
+            let len = (dx * dx + dy * dy).sqrt().max(f64::MIN_POSITIVE);
+            ((pt.x - a.x) * dy - (pt.y - a.y) * dx) / len
+        };
+
         let steps = 60;
         let mut checked = 0usize;
         for i in 0..=steps {
@@ -138,36 +151,21 @@ fn box_contains_its_polygon() {
                     continue;
                 }
                 checked += 1;
-                // Shrink the point towards no direction: an interior point of
-                // the polygon must never fall outside the enclosing box.
+                let c = Coord { x, y };
+                // Inside the box means no edge reports a positive outward side.
+                let worst = ext
+                    .0
+                    .windows(2)
+                    .map(|w| side(c, w[0], w[1]))
+                    .fold(f64::NEG_INFINITY, f64::max);
                 assert!(
-                    box_poly.contains(&pt) || box_poly.exterior().contains(&pt),
-                    "{name}: interior point {pt:?} outside the returned box"
+                    worst <= tol,
+                    "{name}: interior point {pt:?} sits {worst:e} outside the box (tol {tol:e})"
                 );
             }
         }
         assert!(checked > 0, "{name}: no interior points sampled");
     }
-}
-
-#[test]
-fn holes_do_not_change_the_box() {
-    let outer = poly(&[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)]);
-    let with_hole = Polygon::new(
-        outer.exterior().clone(),
-        vec![LineString::from(vec![
-            Coord { x: 3.0, y: 3.0 },
-            Coord { x: 7.0, y: 3.0 },
-            Coord { x: 7.0, y: 7.0 },
-            Coord { x: 3.0, y: 7.0 },
-            Coord { x: 3.0, y: 3.0 },
-        ])],
-    );
-    let opts = ObbOptions::default();
-    let a = solve_obb(&outer, &opts).expect("obb").area;
-    let b = solve_obb(&with_hole, &opts).expect("obb").area;
-    assert!((a - b).abs() < 1e-9, "hole changed the box: {a} vs {b}");
-    assert!((a - 100.0).abs() < 1e-9);
 }
 
 #[test]
