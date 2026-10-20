@@ -9,14 +9,9 @@ finds the rotation that best fits a fixed aspect-ratio frame.
 [![Tests](https://img.shields.io/badge/tests-17%20passing-brightgreen.svg)](https://github.com/Wolren/OrientedBoundingBox/actions/workflows/ci.yml)
 [![GEOS](https://img.shields.io/badge/vs%20GEOS-4.23x%20faster-blue.svg)](https://github.com/Wolren/OrientedBoundingBox#performance)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/Wolren/OrientedBoundingBox?tab=License-1-ov-file)
-[![Status](https://img.shields.io/badge/status-experimental-orange.svg)]()
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Wolren-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/wolren)
 
 </div>
-
-> **This crate is experimental.** The API is actively evolving: expect
-> breaking changes between 0.x releases. Entry points, result fields, and
-> feature flags are all subject to change.
 
 An oriented bounding box is the smallest rectangle of a chosen orientation that
 contains a polygon. The axis-aligned box is the zero-degree case. This is the
@@ -24,17 +19,6 @@ enclosing direction, the opposite of an inscribed solver, which places a shape
 inside the polygon.
 
 The crate is pure Rust. It calls no external solver.
-
-## Install
-
-The crate has no crates.io release yet. Add it as a git dependency:
-
-```toml
-[dependencies]
-oriented-bounding-box = { git = "https://github.com/Wolren/OrientedBoundingBox" }
-```
-
-Rust 1.88 or newer. Default features are empty. The crate links no C library.
 
 ## API
 
