@@ -55,7 +55,6 @@
 //! [`ffi`] exposes `obb_solve`, `obb_solve_constrained`, `obb_solve_aspect_fit`
 //! and `obb_options_default`: flat coordinate arrays in, `#[repr(C)]` structs
 //! out, `0` on success and `-1` on error, with panics caught at the boundary.
-//! The crate builds as `rlib`, `cdylib` and `staticlib`.
 
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
