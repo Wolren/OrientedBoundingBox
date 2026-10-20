@@ -5,6 +5,8 @@
 Finds the smallest rectangle that contains a polygon at any orientation. It also
 finds the rotation that best fits a fixed aspect-ratio frame.
 
+[![crate](https://img.shields.io/crates/v/oriented-bounding-box.svg)](https://crates.io/crates/oriented-bounding-box)
+[![docs](https://docs.rs/oriented-bounding-box/badge.svg)](https://docs.rs/oriented-bounding-box)
 ![MSRV](https://img.shields.io/badge/rustc-1.88+-ab6000.svg)
 [![Tests](https://img.shields.io/badge/tests-22%20passing-brightgreen.svg)](https://github.com/Wolren/OrientedBoundingBox/actions/workflows/ci.yml)
 [![GEOS](https://img.shields.io/badge/vs%20GEOS-4.28x%20faster-blue.svg)](https://github.com/Wolren/OrientedBoundingBox#performance)
