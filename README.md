@@ -98,8 +98,10 @@ The advantage is stable across size, unlike a convergent search:
 | 65-128 | 20 | 0.07 ms | 0.24 ms | 3.55x |
 | 129+ | 14 | 0.12 ms | 0.44 ms | 3.85x |
 
-This crate has no threading at all, so the margin is single-threaded by
-construction. Pinned to one core the ratio is 3.98x against 4.23x unpinned.
+These numbers are single-threaded on both sides, which is the honest like-for-like
+comparison: this measures the solver, not the threading. The `rayon` feature adds
+`solve_obb_slice`, which returns bit-identical results in input order and runs
+4.2x faster over the same 290 parcels on 12 cores.
 
 Box areas agree: median 2.1e-8, p90 6.5e-7, max 3.1e-5 relative. The min-area
 box is unique, so a larger disagreement would mean one side is wrong.
@@ -113,6 +115,7 @@ which needs `GEOS_LIB_DIR`, `GEOS_VERSION` and GEOS on `PATH`.
 |---------|--------|
 | `geo-traits` | solve over any `geo_traits::PolygonTrait`, plus `geo_types::Geometry` dispatch |
 | `hotpath` | `#[hotpath::measure]` instrumentation on the solver entry points |
+| `rayon` | `solve_obb_slice`: solve many polygons in parallel, input order preserved |
 | `python` | PyO3 extension module |
 | `extension-module` | build the Python module as an importable extension |
 | `bench-geos` | comparison only: links GEOS so benchmarks can cross-check the solvers |
