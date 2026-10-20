@@ -33,9 +33,8 @@ pub fn hull_ccw(poly: &Polygon<f64>) -> Option<Vec<Coord<f64>>> {
     Some(coords)
 }
 
-#[cfg_attr(feature = "hotpath", hotpath::measure)]
-/// Width (w) and depth (d) of point set projected along angle θ.
-#[cfg_attr(feature = "hotpath", hotpath::measure)]
+#[inline]
+/// Width and depth of a point set projected along `theta` and its normal.
 pub fn width_depth(pts: &[Coord<f64>], theta: f64) -> (f64, f64) {
     let (c, s) = (theta.cos(), theta.sin());
     let (c2, s2) = (-s, c);
@@ -64,6 +63,91 @@ pub fn width_depth(pts: &[Coord<f64>], theta: f64) -> (f64, f64) {
 
     (p_max - p_min, pd_max - pd_min)
 }
+
+/// Extreme hull vertices for a direction, found by a monotone advance.
+///
+/// The hull is convex and CCW, so as `theta` grows the vertex that maximises the
+/// projection advances monotonically. Tracking that index costs O(1) amortised
+/// per query instead of the O(h) full scan, which turns the whole minimum-area
+/// sweep from O(h^2) into O(h). `start` is the index found for the previous
+/// angle, and the search continues from there.
+#[inline]
+fn advance<F: Fn(usize) -> f64>(count: usize, mut idx: usize, proj: F) -> usize {
+    let mut advanced = 0usize;
+    // A full lap is the guard: a degenerate hull cannot trap the walk.
+    while advanced < count {
+        let next = (idx + 1) % count;
+        if proj(next) > proj(idx) {
+            idx = next;
+            advanced += 1;
+        } else {
+            break;
+        }
+    }
+    idx
+}
+
+/// Width and depth by monotone support points, seeded by `prev` indices.
+///
+/// Returns the extents and the four indices that produced them, so the next
+/// angle can resume the walk from there.
+pub fn width_depth_walk(
+    pts: &[Coord<f64>],
+    theta: f64,
+    prev: [usize; 4],
+) -> ((f64, f64), [usize; 4]) {
+    let (c, s) = (theta.cos(), theta.sin());
+    let n = pts.len();
+    let proj_min = |i: usize| -(pts[i].x * c + pts[i].y * s);
+    let proj_max = |i: usize| pts[i].x * c + pts[i].y * s;
+    let depth_min = |i: usize| -(pts[i].x * -s + pts[i].y * c);
+    let depth_max = |i: usize| pts[i].x * -s + pts[i].y * c;
+
+    let i_max = advance(n, prev[0], proj_max);
+    let i_min = advance(n, prev[1], proj_min);
+    let i_dmax = advance(n, prev[2], depth_max);
+    let i_dmin = advance(n, prev[3], depth_min);
+
+    let p_max = pts[i_max].x * c + pts[i_max].y * s;
+    let p_min = pts[i_min].x * c + pts[i_min].y * s;
+    let pd_max = pts[i_dmax].x * -s + pts[i_dmax].y * c;
+    let pd_min = pts[i_dmin].x * -s + pts[i_dmin].y * c;
+
+    (
+        (p_max - p_min, pd_max - pd_min),
+        [i_max, i_min, i_dmax, i_dmin],
+    )
+}
+
+/// Seeds for [`width_depth_walk`] at the first angle, by a full scan.
+pub fn width_depth_seed(pts: &[Coord<f64>], theta: f64) -> [usize; 4] {
+    let (c, s) = (theta.cos(), theta.sin());
+    let mut out = [0usize; 4];
+    let (mut p_max, mut p_min) = (f64::NEG_INFINITY, f64::INFINITY);
+    let (mut d_max, mut d_min) = (f64::NEG_INFINITY, f64::INFINITY);
+    for (i, pt) in pts.iter().enumerate() {
+        let p = pt.x * c + pt.y * s;
+        let d = pt.x * -s + pt.y * c;
+        if p > p_max {
+            p_max = p;
+            out[0] = i;
+        }
+        if p < p_min {
+            p_min = p;
+            out[1] = i;
+        }
+        if d > d_max {
+            d_max = d;
+            out[2] = i;
+        }
+        if d < d_min {
+            d_min = d;
+            out[3] = i;
+        }
+    }
+    out
+}
+
 
 /// Fill ratio: F = w·d / (max(w, d·r) · max(d, w/r))
 #[cfg_attr(feature = "hotpath", hotpath::measure)]

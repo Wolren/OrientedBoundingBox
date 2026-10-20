@@ -1,19 +1,23 @@
 //! Minimal-area OBB by rotating calipers over convex-hull edge directions.
 
 use super::super::{ObbOptions, ObbResult};
-use super::common::{hull_ccw, width_depth};
+use super::common::{hull_ccw, width_depth_seed, width_depth_walk};
 use crate::shared::{rotate_polygon_around, LirError, Result};
-use geo::{Area, Centroid};
+use geo::Area;
 use geo_types::{Coord, LineString, Point, Polygon};
 
-/// Minimal-area OBB via rotating calipers (edge-aligned search).
+/// Minimal-area OBB via rotating calipers over convex-hull edge directions.
 ///
-/// For each convex-hull edge direction the bounding-box area is computed
-/// in closed form.  The minimum over all edge orientations is exact for
-/// convex polygons; concave polygons use the hull which gives the same
-/// minimal OBB.
+/// For each convex-hull edge direction the bounding-box area follows in closed
+/// form from the extent of the hull along that direction and its normal.
 ///
-/// Complexity: O(h²) worst-case (h = hull vertices).
+/// The extent along `theta` is also the extent along `theta + pi`, so the loop
+/// folds the axis into `[0, pi/2)` and reads both extents from one projection.
+/// A hull edge and the edge perpendicular to it then share work, which halves
+/// the projection passes without changing the answer.
+///
+/// Complexity: O(h^2) in the number of distinct hull edge directions, because
+/// each candidate angle projects every hull vertex.
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn solve_obb_rotating_calipers(
     poly: &Polygon<f64>,
@@ -30,7 +34,10 @@ pub fn solve_obb_rotating_calipers(
         if dx.abs() < 1e-12 && dy.abs() < 1e-12 {
             continue;
         }
-        angles.push(dy.atan2(dx).rem_euclid(std::f64::consts::PI));
+        // A box at angle a and one at a + pi/2 have the same area, so only the
+        // first quadrant of orientations needs a candidate.
+        let a = dy.atan2(dx).rem_euclid(std::f64::consts::FRAC_PI_2);
+        angles.push(a);
     }
     angles.sort_by(|a, b| a.partial_cmp(b).unwrap());
     angles.dedup_by(|a, b| (*a - *b).abs() < 1e-12);
@@ -39,7 +46,16 @@ pub fn solve_obb_rotating_calipers(
         return Err(LirError::InvalidPolygon("no valid edges".into()));
     }
 
-    let centroid: Point<f64> = poly.centroid().unwrap_or(Point::new(0.0, 0.0));
+    // Centre the hull once. Projected extents are translation invariant, but the
+    // reconstruction below works in this frame.
+    let mut cx = 0.0f64;
+    let mut cy = 0.0f64;
+    for pt in &pts {
+        cx += pt.x;
+        cy += pt.y;
+    }
+    cx /= n as f64;
+    cy /= n as f64;
 
     let mut best_area = f64::INFINITY;
     let mut best_angle = 0.0;
@@ -48,8 +64,13 @@ pub fn solve_obb_rotating_calipers(
     let mut best_bb_min = Coord { x: 0.0, y: 0.0 };
     let mut best_bb_max = Coord { x: 0.0, y: 0.0 };
 
+    // The hull is convex, so each support index advances monotonically as the
+    // angle grows. Seeding once and walking gives O(h) overall instead of the
+    // O(h^2) that a full projection per angle costs.
+    let mut support = width_depth_seed(&pts, angles[0]);
     for &angle in &angles {
-        let (w, h) = width_depth(&pts, angle);
+        let ((w, h), next) = width_depth_walk(&pts, angle, support);
+        support = next;
 
         if w * h < best_area {
             best_area = w * h;
@@ -63,8 +84,8 @@ pub fn solve_obb_rotating_calipers(
             let mut min_y = f64::INFINITY;
             let mut max_y = f64::NEG_INFINITY;
             for pt in &pts {
-                let dx = pt.x - centroid.x();
-                let dy = pt.y - centroid.y();
+                let dx = pt.x - cx;
+                let dy = pt.y - cy;
                 let rx = dx * c + dy * s;
                 let ry = -dx * s + dy * c;
                 if rx < min_x {
@@ -84,6 +105,8 @@ pub fn solve_obb_rotating_calipers(
             best_bb_max = Coord { x: max_x, y: max_y };
         }
     }
+
+    let centroid = Point::new(cx, cy);
 
     let bb_poly = Polygon::new(
         LineString::from(vec![
