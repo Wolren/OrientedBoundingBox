@@ -68,8 +68,10 @@ fn geometry_dispatch_rejects_point() {
 #[test]
 fn constrained_and_aspect_fit_trait_paths() {
     let poly = square();
-    let mut opts = ObbOptions::default();
-    opts.max_ratio = 1.5;
+    let opts = ObbOptions {
+        max_ratio: 1.5,
+        ..Default::default()
+    };
     let r = solve_obb_constrained_polygon_trait(&&poly, &opts).unwrap();
     assert!(r.aspect_ratio <= 1.5 + 1e-6);
     let r = solve_obb_aspect_fit_polygon_trait(&&poly, 297.0, 210.0).unwrap();

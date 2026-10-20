@@ -3,7 +3,7 @@
 //! Rotating-calipers support function with a closed-form aspect-ratio
 //! crossing root per caliper interval: O(n log n), no grid search.
 
-use super::super::ObbResult;
+use super::super::{ObbFrame, ObbResult};
 use super::common::{
     antipodal_coeffs, caliper_breakpoints, fill_ratio, hull_ccw, width_depth, EPS,
 };
@@ -110,7 +110,7 @@ pub fn build_obb_frame(
     theta_rad: f64,
     ratio_w: f64,
     ratio_h: f64,
-) -> Option<(Polygon<f64>, f64, f64, f64, f64, f64, f64)> {
+) -> Option<ObbFrame> {
     let centroid = poly.centroid()?;
     let r = ratio_w / ratio_h;
     let theta_deg = theta_rad.to_degrees();
@@ -156,5 +156,12 @@ pub fn build_obb_frame(
     let frame = crate::shared::rotate_polygon_around(&frame_rot, theta_deg, &centroid);
     let fc = frame.centroid()?;
 
-    Some((frame, fw, fh, wb, hb, fc.x(), fc.y()))
+    Some(ObbFrame {
+        polygon: frame,
+        frame_w: fw,
+        frame_h: fh,
+        body_w: wb,
+        body_h: hb,
+        center: fc,
+    })
 }
