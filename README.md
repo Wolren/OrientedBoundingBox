@@ -6,8 +6,8 @@ Finds the smallest rectangle that contains a polygon at any orientation. It also
 finds the rotation that best fits a fixed aspect-ratio frame.
 
 ![MSRV](https://img.shields.io/badge/rustc-1.88+-ab6000.svg)
-[![Tests](https://img.shields.io/badge/tests-17%20passing-brightgreen.svg)](https://github.com/Wolren/OrientedBoundingBox/actions/workflows/ci.yml)
-[![GEOS](https://img.shields.io/badge/vs%20GEOS-4.23x%20faster-blue.svg)](https://github.com/Wolren/OrientedBoundingBox#performance)
+[![Tests](https://img.shields.io/badge/tests-22%20passing-brightgreen.svg)](https://github.com/Wolren/OrientedBoundingBox/actions/workflows/ci.yml)
+[![GEOS](https://img.shields.io/badge/vs%20GEOS-4.28x%20faster-blue.svg)](https://github.com/Wolren/OrientedBoundingBox#performance)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/Wolren/OrientedBoundingBox?tab=License-1-ov-file)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Wolren-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/wolren)
 
@@ -84,19 +84,19 @@ sides run serially, so the table measures the solver and not the threading.
 
 | Measure | native | GEOS | Ratio |
 |---------|-------:|-----:|------:|
-| total, 290 parcels | **0.5 ms** | 2.2 ms | **4.23x** |
-| per-case median | | | 4.25x |
-| per-case p90 | | | 5.67x |
+| total, 290 parcels | **0.5 ms** | 2.2 ms | **4.28x** |
+| per-case median | | | 4.26x |
+| per-case p90 | | | 5.29x |
 | native faster on | 290/290 | | 100% |
 
 The margin holds across size, because the solve does not converge:
 
 | Exterior vertices | n | native | GEOS | Ratio |
 |------------------:|--:|-------:|-----:|------:|
-| 0-7 | 42 | 0.03 ms | 0.11 ms | 4.17x |
-| 8-16 | 111 | 0.12 ms | 0.49 ms | 3.99x |
-| 17-32 | 75 | 0.12 ms | 0.60 ms | 4.83x |
-| 129+ | 14 | 0.12 ms | 0.44 ms | 3.85x |
+| 0-7 | 42 | 0.03 ms | 0.12 ms | 4.08x |
+| 8-16 | 111 | 0.13 ms | 0.50 ms | 3.96x |
+| 17-32 | 75 | 0.11 ms | 0.54 ms | 4.78x |
+| 129+ | 14 | 0.12 ms | 0.50 ms | 4.25x |
 
 The `rayon` feature adds `solve_obb_slice`, which returns bit-identical results
 in input order and runs 4.2x faster over the same parcels on 12 cores.
