@@ -85,9 +85,15 @@ sides run serially, so the table measures the solver and not the threading.
 | Measure | native | GEOS | Ratio |
 |---------|-------:|-----:|------:|
 | total, 290 parcels | **0.5 ms** | 2.2 ms | **4.28x** |
-| per-case median | | | 4.26x |
-| per-case p90 | | | 5.29x |
-| native faster on | 290/290 | | 100% |
+| cases native solves faster | 290 of 290 | 0 of 290 | 100% |
+
+The ratio varies little by case. Across the 290 parcels:
+
+| Per-case ratio | Value |
+|----------------|------:|
+| p10 | 3.50x |
+| median | 4.26x |
+| p90 | 5.29x |
 
 The margin holds across size, because the solve does not converge:
 
