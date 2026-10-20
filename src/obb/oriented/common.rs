@@ -8,10 +8,17 @@ use geo_types::Polygon;
 pub const EPS: f64 = 1e-12;
 
 /// Extract convex hull vertices in CCW order.
+///
+/// Consumes the hull geometry so the coordinate buffer is reused instead of
+/// cloned. `geo` returns an owned `Polygon` here, and cloning its exterior was
+/// one allocation per solve for a buffer that is immediately discarded.
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn hull_ccw(poly: &Polygon<f64>) -> Option<Vec<Coord<f64>>> {
     let h = poly.convex_hull();
-    let mut coords: Vec<Coord<f64>> = h.exterior().0.clone();
+    // Destructure instead of cloning: geo hands back an owned polygon, so the
+    // exterior buffer moves out with no allocation.
+    let (exterior, _) = h.into_inner();
+    let mut coords: Vec<Coord<f64>> = exterior.0;
     if coords.len() < 4 {
         return None;
     }
