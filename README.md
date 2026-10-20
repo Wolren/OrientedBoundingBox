@@ -5,10 +5,8 @@
 Finds the smallest rectangle that contains a polygon at any orientation. It also
 finds the rotation that best fits a fixed aspect-ratio frame.
 
-The axis-aligned box is the zero-degree case.
-
 ![MSRV](https://img.shields.io/badge/rustc-1.88+-ab6000.svg)
-[![Tests](https://img.shields.io/badge/tests-22%20passing-brightgreen.svg)](https://github.com/Wolren/OrientedBoundingBox)
+[![Tests](https://img.shields.io/badge/tests-17%20passing-brightgreen.svg)](https://github.com/Wolren/OrientedBoundingBox/actions/workflows/ci.yml)
 [![GEOS](https://img.shields.io/badge/vs%20GEOS-4.23x%20faster-blue.svg)](https://github.com/Wolren/OrientedBoundingBox#performance)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/Wolren/OrientedBoundingBox?tab=License-1-ov-file)
 [![Status](https://img.shields.io/badge/status-experimental-orange.svg)]()
@@ -16,15 +14,24 @@ The axis-aligned box is the zero-degree case.
 
 </div>
 
-Pure Rust. The crate calls no external solver.
+> **This crate is experimental.** The API is actively evolving: expect
+> breaking changes between 0.x releases. Entry points, result fields, and
+> feature flags are all subject to change.
+
+An oriented bounding box is the smallest rectangle of a chosen orientation that
+contains a polygon. The axis-aligned box is the zero-degree case. This is the
+enclosing direction, the opposite of an inscribed solver, which places a shape
+inside the polygon.
+
+The crate is pure Rust. It calls no external solver.
 
 ## Install
 
-Add the dependency:
+The crate has no crates.io release yet. Add it as a git dependency:
 
 ```toml
 [dependencies]
-oriented-bounding-box = "0.1"
+oriented-bounding-box = { git = "https://github.com/Wolren/OrientedBoundingBox" }
 ```
 
 Rust 1.88 or newer. Default features are empty. The crate links no C library.
@@ -38,16 +45,18 @@ Rust 1.88 or newer. Default features are empty. The crate links no C library.
 | `solve_obb_constrained` | Minimum area, then expand the short side to a ratio |
 | `solve_obb_aspect_fit` | Best rotation for a frame of fixed `ratio_w` to `ratio_h` |
 | `build_obb_frame` | The frame at one known angle, as an `ObbFrame` |
-| `solve_obb_slice` | Solve a batch with rayon |
+| `solve_obb_slice` | Solve a batch with rayon, behind the `rayon` feature |
 
-`ObbResult` reports the box polygon, the area, the perimeter, the width and
-height, the angle in degrees, the centroid, the aspect ratio, and the fill
-ratio. On the aspect-fit path it also reports the north-up fill, the gain over
-it, and the caliper interval count.
+`ObbResult` reports the box polygon and the area. It also reports the perimeter,
+the width and height, the angle in degrees, the centroid, the aspect ratio, and
+the fill ratio. On the aspect-fit path it also reports the north-up fill, the
+gain over it, and the caliper interval count.
 
 `build_obb_frame` returns an `ObbFrame`. That struct reports the frame polygon,
 the frame width and height after expansion, the body width and height, and the
 frame centre.
+
+`solve_obb_axis_aligned` ignores its options argument.
 
 Run `cargo run --example quickstart` for a complete program.
 
@@ -64,7 +73,7 @@ rotation that maximises how much of a fixed-ratio frame the polygon fills.
 
 ## Correctness
 
-`tests/corpus_invariants.rs` checks two properties on every push.
+`tests/corpus_invariants.rs` checks two properties.
 
 The first property is minimality. The caliper area must match an independent
 brute-force sweep over 20,000 angles on the hull, to 1e-4 relative. That sweep
@@ -73,12 +82,17 @@ knows nothing about calipers, so it catches a regression in the bookkeeping.
 The second property is enclosure. A dense sample of interior points must fall
 inside the returned box.
 
+The workflow in `.github/workflows/ci.yml` runs the suite on every push and pull
+request. It runs four feature sets, the 1.88 MSRV check, and a clippy, fmt, and
+rustdoc job. No check needs an external solver.
+
 ## Performance
 
 The corpus holds 290 Polish cadastral parcels in
 `benches/data/realworld_290.geojson`. Only the solve is timed, because the GEOS
 geometry is built before the clock starts. GEOS runs `MinimumRotatedRectangle`,
-its equivalent of the minimum-area box. Ratio is GEOS divided by native.
+its equivalent of the minimum-area box. Ratio is GEOS divided by native. Both
+sides run serially, so the table measures the solver and not the threading.
 
 | Measure | native | GEOS | Ratio |
 |---------|-------:|-----:|------:|
@@ -96,44 +110,93 @@ The margin holds across size, because the solve does not converge:
 | 17-32 | 75 | 0.12 ms | 0.60 ms | 4.83x |
 | 129+ | 14 | 0.12 ms | 0.44 ms | 3.85x |
 
-Both sides run serially, so the table measures the solver and not the threading.
 The `rayon` feature adds `solve_obb_slice`, which returns bit-identical results
 in input order and runs 4.2x faster over the same parcels on 12 cores.
 
 The two solvers agree on the answer as well. Box areas differ by a median of
 2.1e-8 relative, and by at most 3.1e-5. The minimum-area box is unique, so a
-larger gap would mean one side is wrong.
+larger gap would mean that one side is wrong.
 
-Regenerate with `cargo run --release --features bench-geos --example compare_apples`.
+Regenerate with
+`cargo run --release --features bench-geos --example compare_apples`. The build
+needs the GEOS C library. The GEOS dependency reads `GEOS_LIB_DIR` and
+`GEOS_VERSION` when pkg-config cannot find an install.
+
+## Limitations
+
+1. **The solve uses the convex hull.** A concave ring and its hull return the
+   same box, and the crate does not detect a self intersection.
+2. **Holes do not affect the box.** The box encloses the exterior ring, and a
+   hole cannot extend past it.
+3. **A degenerate input fails fast.** A NaN or infinite coordinate returns
+   `LirError::InvalidPolygon`. A collinear ring returns an error instead of a
+   zero-area box.
+4. **Four option fields change nothing.** `angle_samples`, `use_pca`,
+   `use_refinement`, and `xatol_deg` are carried fields. The caliper solve is
+   exact and samples no angles. The Rust API, the C ABI, and the Python
+   signatures still accept the four fields.
+5. **The benchmark numbers come from one machine and one GEOS build.** A
+   different GEOS build or core count moves the GEOS column, not the native one.
+
+## Integration with the geo ecosystem
+
+Enable `geo-traits` to accept a foreign polygon directly. WKB views, GeoArrow
+arrays, and GeoZero streams then need no conversion.
+
+| Function | Accepts |
+|----------|---------|
+| `solve_obb_polygon_trait` | any `PolygonTrait` with `f64` coordinates, minimum area |
+| `solve_obb_constrained_polygon_trait` | any `PolygonTrait`, with the ratio constraints |
+| `solve_obb_aspect_fit_polygon_trait` | any `PolygonTrait`, with a fixed frame ratio |
+| `solve_obb_geometry` | `geo_types::Geometry`, polygon only, minimum area |
+| `solve_obb_constrained_geometry` | `geo_types::Geometry`, polygon only, with ratio constraints |
+
+The dispatch functions reject a non-polygonal variant with
+`LirError::NotSupported`, and the message names the variant.
+
+## Python bindings
+
+The `python` feature builds the extension module `oriented_bounding_box`. Build
+it with maturin, or with `cargo build --features python,extension-module`.
+
+| Function | Signature |
+|----------|-----------|
+| `solve_obb_py` | `(exterior, holes=None, max_aspect_ratio=None, min_aspect_ratio=None, angle_samples=None, use_pca=None, use_refinement=None, xatol_deg=None)` |
+| `solve_obb_constrained_py` | `(exterior, holes=None, max_aspect_ratio=None, min_aspect_ratio=None)` |
+| `solve_obb_aspect_fit_py` | `(exterior, ratio_w, ratio_h, holes=None)` |
+
+The result class reports `area`, `perimeter`, `angle_deg`, `width`, `height`,
+`aspect_ratio`, `fill_ratio`, `centroid_x`, `centroid_y`, `polygon_wkt`,
+`north_fill`, `improve_pct`, and `n_intervals`. The box polygon arrives as WKT
+text, and it is empty when no polygon was produced. A rejected input raises
+`ValueError`, and so does a solver panic.
+
+## C API
+
+`src/ffi.rs` is always compiled. It exposes `obb_solve`, `obb_solve_constrained`,
+`obb_solve_aspect_fit`, and `obb_options_default`. Flat `[x0, y0, ...]`
+coordinate arrays plus `HoleInput` entries go in, and `ObbResultC` comes out.
+
+`ObbResultC` carries the box as ten doubles, four corners plus the first corner
+repeated. The ring is zero-filled on the aspect-fit path, where no polygon is
+produced.
+
+Each function returns 0 on success and -1 on failure. A panic becomes -1, and a
+null or short buffer is rejected instead of crashing.
+
+The crate builds as `rlib`, `cdylib`, and `staticlib`, so `cargo build
+--release` produces the shared library without an extra feature.
 
 ## Features
 
-| Feature | Effect |
-|---------|--------|
-| `geo-traits` | Solve over any `PolygonTrait` |
-| `rayon` | Solve many polygons in parallel |
-| `hotpath` | Instrument the entry points with `hotpath` |
-| `python` | Build a PyO3 extension module |
-| `bench-geos` | Link GEOS for benchmark comparison only |
-
-Enable `geo-traits` to accept a foreign polygon directly. WKB views, GeoArrow
-arrays, and GeoZero streams then need no conversion. The dispatch function
-rejects a non-polygonal geometry with an error that names the variant.
-
-The C ABI lives in `src/ffi.rs`, and it catches panic at the boundary.
-
-## Limits
-
-The crate rejects a NaN or infinite coordinate with `LirError::InvalidPolygon`.
-A degenerate ring fails the same way. A ring with fewer than three distinct
-vertices counts as degenerate.
-
-Holes do not affect the box. The box encloses the exterior ring, and a hole
-cannot extend past it.
-
-`angle_samples`, `use_pca`, `use_refinement`, and `xatol_deg` are carried
-fields. The caliper solve is exact and samples no angles, so those four do not
-change the answer.
+| Feature | Description | Default |
+|---------|-------------|---------|
+| `bench-geos` | Comparison only: links the GEOS C library so benchmarks can cross-check the native solver. Never compiled into the solve path. | no |
+| `geo-traits` | Generic solves over any `geo_traits` polygon, plus `geo_types::Geometry` dispatch | no |
+| `rayon` | Adds `solve_obb_slice` for parallel batches | no |
+| `hotpath` | `hotpath::measure` instrumentation on the solver entry points | no |
+| `python` | PyO3 extension module named `oriented_bounding_box` | no |
+| `extension-module` | Build the Python module as an importable extension | no |
 
 ## License
 
