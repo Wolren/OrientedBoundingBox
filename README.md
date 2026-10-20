@@ -18,8 +18,6 @@ contains a polygon. The axis-aligned box is the zero-degree case. This is the
 enclosing direction, the opposite of an inscribed solver, which places a shape
 inside the polygon.
 
-The crate is pure Rust. It calls no external solver.
-
 ## API
 
 | Function | Box |
@@ -105,22 +103,6 @@ Regenerate with
 `cargo run --release --features bench-geos --example compare_apples`. The build
 needs the GEOS C library. The GEOS dependency reads `GEOS_LIB_DIR` and
 `GEOS_VERSION` when pkg-config cannot find an install.
-
-## Limitations
-
-1. **The solve uses the convex hull.** A concave ring and its hull return the
-   same box, and the crate does not detect a self intersection.
-2. **Holes do not affect the box.** The box encloses the exterior ring, and a
-   hole cannot extend past it.
-3. **A degenerate input fails fast.** A NaN or infinite coordinate returns
-   `LirError::InvalidPolygon`. A collinear ring returns an error instead of a
-   zero-area box.
-4. **Four option fields change nothing.** `angle_samples`, `use_pca`,
-   `use_refinement`, and `xatol_deg` are carried fields. The caliper solve is
-   exact and samples no angles. The Rust API, the C ABI, and the Python
-   signatures still accept the four fields.
-5. **The benchmark numbers come from one machine and one GEOS build.** A
-   different GEOS build or core count moves the GEOS column, not the native one.
 
 ## Integration with the geo ecosystem
 
