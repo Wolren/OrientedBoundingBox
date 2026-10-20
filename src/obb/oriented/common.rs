@@ -33,7 +33,6 @@ pub fn hull_ccw(poly: &Polygon<f64>) -> Option<Vec<Coord<f64>>> {
     Some(coords)
 }
 
-#[inline]
 /// Width and depth of a point set projected along `theta` and its normal.
 pub fn width_depth(pts: &[Coord<f64>], theta: f64) -> (f64, f64) {
     let (c, s) = (theta.cos(), theta.sin());
@@ -183,49 +182,24 @@ pub fn caliper_breakpoints(pts: &[Coord<f64>]) -> Vec<f64> {
 
 /// Antipodal coefficients (Aw, Bw, Ad, Bd) at a given angle.
 ///
-#[cfg_attr(feature = "hotpath", hotpath::measure)]
-/// Within a caliper interval the antipodal pairs are fixed, so:
+/// Within a caliper interval the supporting vertices are fixed, so:
 ///   w(θ) = Aw·cosθ + Bw·sinθ
 ///   d(θ) = Ad·cosθ + Bd·sinθ
-#[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn antipodal_coeffs(pts: &[Coord<f64>], theta: f64) -> (f64, f64, f64, f64) {
-    let (c, s) = (theta.cos(), theta.sin());
-    let (c2, s2) = (-s, c);
+    let idx = width_depth_seed(pts, theta);
+    antipodal_coeffs_at(pts, idx)
+}
 
-    let mut p_max = f64::NEG_INFINITY;
-    let mut p_min = f64::INFINITY;
-    let mut p2_max = f64::NEG_INFINITY;
-    let mut p2_min = f64::INFINITY;
-    let mut vt = 0usize;
-    let mut vb = 0usize;
-    let mut vr = 0usize;
-    let mut vl = 0usize;
-
-    for (i, pt) in pts.iter().enumerate() {
-        let p = pt.x * c + pt.y * s;
-        let p2 = pt.x * c2 + pt.y * s2;
-        if p > p_max {
-            p_max = p;
-            vt = i;
-        }
-        if p < p_min {
-            p_min = p;
-            vb = i;
-        }
-        if p2 > p2_max {
-            p2_max = p2;
-            vr = i;
-        }
-        if p2 < p2_min {
-            p2_min = p2;
-            vl = i;
-        }
-    }
-
+/// Antipodal coefficients from four already-known support indices.
+///
+/// Avoids the O(h) scan when the caller is walking the supports anyway, which
+/// is what makes the per-interval work in the aspect-fit search O(1).
+#[inline]
+pub fn antipodal_coeffs_at(pts: &[Coord<f64>], idx: [usize; 4]) -> (f64, f64, f64, f64) {
+    let (vt, vb, vr, vl) = (idx[0], idx[1], idx[2], idx[3]);
     let aw = pts[vt].x - pts[vb].x;
     let bw = pts[vt].y - pts[vb].y;
     let ad = pts[vr].y - pts[vl].y;
     let bd = -(pts[vr].x - pts[vl].x);
-
     (aw, bw, ad, bd)
 }

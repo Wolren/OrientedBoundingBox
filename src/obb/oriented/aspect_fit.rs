@@ -5,7 +5,8 @@
 
 use super::super::{ObbFrame, ObbResult};
 use super::common::{
-    antipodal_coeffs, caliper_breakpoints, fill_ratio, hull_ccw, width_depth, EPS,
+    antipodal_coeffs_at, caliper_breakpoints, fill_ratio, hull_ccw, width_depth, width_depth_seed,
+    width_depth_walk, EPS,
 };
 use geo::{BoundingRect, Centroid};
 use geo_types::{Coord, Polygon};
@@ -40,11 +41,16 @@ pub fn solve_obb_aspect_fit(poly: &Polygon<f64>, ratio_w: f64, ratio_h: f64) -> 
     }
 
     let mut cands = bps.clone();
+    // One support walk across the intervals: the coefficients per interval come
+    // from the indices, so no interval rescans the hull.
+    let mut support = width_depth_seed(&pts, bps[0]);
     for i in 0..bps.len() - 1 {
         let lo = bps[i];
         let hi = bps[i + 1];
         let mid = (lo + hi) / 2.0;
-        let (aw, bw, ad, bd) = antipodal_coeffs(&pts, mid);
+        let (_, next) = width_depth_walk(&pts, mid, support);
+        support = next;
+        let (aw, bw, ad, bd) = antipodal_coeffs_at(&pts, support);
         let p = aw - r * ad;
         let q = bw - r * bd;
         if p.hypot(q) < EPS {
@@ -62,9 +68,24 @@ pub fn solve_obb_aspect_fit(poly: &Polygon<f64>, ratio_w: f64, ratio_h: f64) -> 
 
     let mut best_fill = -1.0;
     let mut best_theta = 0.0;
-    for &t in &cands {
-        let t = t.rem_euclid(std::f64::consts::PI);
-        let (w, d) = width_depth(&pts, t);
+    // The hull is convex, so the support vertices advance monotonically as the
+    // candidate angle grows. Sort the candidates and walk the supports across
+    // them, which costs O(h) for the whole sweep instead of a full projection
+    // per candidate. Without this the search is O(h^2) and dominated it.
+    let mut ordered: Vec<f64> = cands
+        .iter()
+        .map(|t| t.rem_euclid(std::f64::consts::PI))
+        .collect();
+    ordered.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    ordered.dedup_by(|a, b| (*a - *b).abs() < EPS);
+
+    if ordered.is_empty() {
+        ordered.push(0.0);
+    }
+    let mut support = width_depth_seed(&pts, ordered[0]);
+    for &t in &ordered {
+        let ((w, d), next) = width_depth_walk(&pts, t, support);
+        support = next;
         let f = fill_ratio(w, d, r);
         if f > best_fill + 1e-16 {
             best_fill = f;
