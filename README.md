@@ -1,9 +1,20 @@
-# oriented-bounding-box
+<div align="center">
+
+# OrientedBoundingBox
 
 Finds the smallest rectangle that contains a polygon at any orientation. It also
 finds the rotation that best fits a fixed aspect-ratio frame.
 
 The axis-aligned box is the zero-degree case.
+
+![MSRV](https://img.shields.io/badge/rustc-1.88+-ab6000.svg)
+[![Tests](https://img.shields.io/badge/tests-22%20passing-brightgreen.svg)](https://github.com/Wolren/OrientedBoundingBox)
+[![GEOS](https://img.shields.io/badge/vs%20GEOS-4.23x%20faster-blue.svg)](https://github.com/Wolren/OrientedBoundingBox#performance)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/Wolren/OrientedBoundingBox?tab=License-1-ov-file)
+[![Status](https://img.shields.io/badge/status-experimental-orange.svg)]()
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Wolren-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/wolren)
+
+</div>
 
 Pure Rust. The crate calls no external solver.
 
