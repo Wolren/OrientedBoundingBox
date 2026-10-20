@@ -148,7 +148,6 @@ pub fn width_depth_seed(pts: &[Coord<f64>], theta: f64) -> [usize; 4] {
     out
 }
 
-
 /// Fill ratio: F = w·d / (max(w, d·r) · max(d, w/r))
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn fill_ratio(w: f64, d: f64, r: f64) -> f64 {

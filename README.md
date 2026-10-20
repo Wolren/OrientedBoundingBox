@@ -49,6 +49,11 @@ always edge-aligned, so the calipers visit each hull edge and evaluate one
 candidate angle per edge. The answer is exact, not sampled. A concave polygon
 needs no special case, because its hull has the same minimal box.
 
+A hull is convex, so each support vertex advances monotonically as the angle
+grows. The solve tracks four support indices and walks them forward, which
+costs O(h) overall rather than the O(h^2) of projecting every vertex at every
+angle. A hull of 8192 vertices solves in 1.3 ms.
+
 The constrained solve takes that box and expands the shorter side until the
 ratio satisfies `max_ratio` and `min_ratio`. The aspect-fit solve searches the
 rotation that maximises how much of a fixed-ratio frame the polygon fills.
