@@ -162,8 +162,6 @@ produced.
 Each function returns 0 on success and -1 on failure. A panic becomes -1, and a
 null or short buffer is rejected instead of crashing.
 
-The crate builds as `rlib`, `cdylib`, and `staticlib`, so `cargo build
---release` produces the shared library without an extra feature.
 
 ## Features
 
