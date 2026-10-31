@@ -1,10 +1,10 @@
 [package]
 name = "oriented-bounding-box"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 rust-version = "1.88"
 license = "Apache-2.0"
-description = "Finds the tightest oriented box around a polygon, with rotating-calipers min-area, aspect-ratio constrained expansion, and exact aspect-fit rotation."
+description = "Finds the smallest rectangle that contains a polygon at any orientation"
 repository = "https://github.com/Wolren/OrientedBoundingBox"
 documentation = "https://docs.rs/oriented-bounding-box"
 readme = "README.md"
